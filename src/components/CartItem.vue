@@ -1,15 +1,22 @@
 <template>
   <div class="cart-item" v-if="artwork">
-    
-      <div class="cart-preview">
-        <framed-artwork :artwork="artwork" :config="cartItem" />
-      </div>
-      
+
+    <div class="cart-preview">
+      <framed-artwork :artwork="artwork" :config="cartItem" />
+    </div>
+
     <!-- TODO: complete this and slot it into a museum label
       <div class="cart-frame-description"></div>
       <div class="cart-price">€ 0</div>
       <button class="cart-remove"></button>
     -->
+
+    <MuseumLabel :artwork="artwork"></MuseumLabel>
+    <slot>
+      <div class="cart-frame-description">{{ description }}</div>
+      <div class="cart-price">€ {{ priceText }}</div>
+      <button class="cart-remove" @click="removeItem"></button>
+    </slot>
   </div>
 </template>
 
@@ -18,9 +25,13 @@ import FramedArtwork from "@/components/FramedArtwork.vue";
 import { mapStores } from "pinia";
 import { useArtmartStore } from "@/store";
 
+import MuseumLabel from "@/components/MuseumLabel.vue";
+import * as ArtmartService from "@/services/ArtmartService";
+
 export default {
   name: "CartItem",
   components: {
+    MuseumLabel,
     FramedArtwork,
   },
   props: {
@@ -38,6 +49,18 @@ export default {
     return {
       artwork: null,
     };
+  },
+  mounted() {
+    this.fetchArtwork();
+  },
+  methods: {
+    async fetchArtwork() {
+      this.artwork = await ArtmartService.getArtwork(this.cartItem.artworkId);
+    },
+    removeItem() {
+      this.artmartStore.removeFromCart(this.cartItem.cartItemId);
+      this.$emit('remove', this.cartItem.cartItemId);
+    },
   },
   computed: {
     artmartStore: mapStores(useArtmartStore).artmartStore,
@@ -91,7 +114,8 @@ export default {
 }
 
 .cart-preview img {
-  border: 0px solid black; /* necessary for Chrome & Firefox */
+  border: 0px solid black;
+  /* necessary for Chrome & Firefox */
   box-shadow: 0 7px 15px 0 rgba(0, 0, 0, 0.5);
 }
 

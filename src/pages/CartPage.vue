@@ -2,19 +2,51 @@
   <main>
     <section class="cart">
       <!-- TODO: render and bind cart items here -->
+      <div v-if="cartItems.length === 0">
+        <p>There are no items in your shopping cart.</p>
+      </div>
+      <div v-else>
+        <cart-item
+          v-for="item in cartItems"
+          :key="item.cartItemId"
+          :cart-item="item"
+          class="cart-item"
+        />
       <div class="cart-total">
-        <div class="price">Total: € 0</div>
+        <div class="price">Total: € {{ finalPrice }}</div>
         <!-- TODO: insert checkout button here -->
+        <router-link to="/checkout" class="cart-checkout">Checkout</router-link>
+        </div>
       </div>
     </section>
   </main>
 </template>
 
 <script>
+
+import { computed } from 'vue';
+import { useArtmartStore } from '@/store';
+import CartItem from '@/components/CartItem.vue';
+
+
+
 export default {
   name: "CartPage",
   components: {
-  }
+    CartItem
+  },
+  setup() {
+    const artmartStore = useArtmartStore();
+    const cartItems = computed(() => artmartStore.cart);
+    const totalPrice = computed(() => artmartStore.cart.reduce((total, item) => total + item.price, 0));
+  
+    const finalPrice = totalPrice.value/100;
+
+    return {
+      cartItems,
+      finalPrice
+    };
+  },
 };
 </script>
 

@@ -6,16 +6,25 @@
       <div>
         <input
           type="number"
-          step="0.1"
           :aria-label="legend"
+          step="0.1"
+          :value="modelValue / 10" 
+          :min="min / 10"
+          :max="max / 10"
+          @change="onInputEvent($event)"
         />
         cm
       </div>
     </div>
     <input
       type="range"
-      step="0.1"
       aria-hidden="true"
+      step="0.1"
+      :min="min / 10"
+      :max="max / 10"
+      :value="modelValue / 10"
+      @input="onInputEvent($event)"
+      
     />
   </fieldset>
 </template>
@@ -24,16 +33,38 @@
 export default {
   name: "WidthSlider",
   props: {
-    // TODO: add the rest of the props
-    label: String,
+    min: {
+      type: Number,
+      required: true
+    },
+    max: {
+      type: Number,
+      required: true
+    },
+    modelValue: {
+      type: Number,
+      required: true
+    },
+    label: {
+      type: String,
+      required: true
+    }
   },
   computed: {
     legend() {
       return this.label + " Width";
-    },
+    }
   },
+  methods: {
+    onInputEvent(event) {
+      const newValue = Math.trunc(parseFloat(event.target.value) * 10);
+      const parsedValue = Math.max(Math.min(newValue, this.max), this.min);
+      this.$emit('update:modelValue', parsedValue);
+    }
+  }
 };
 </script>
+
 
 <style>
 

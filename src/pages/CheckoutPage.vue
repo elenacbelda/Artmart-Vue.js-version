@@ -2,7 +2,7 @@
   <main>
 
     <!-- ERROR -->
-    <div v-if="status === 'error'">
+    <div v-show="status === 'error'">
       <div class="error-message">An error occurred during payment. Please try again.</div>
     </div>
 
@@ -97,13 +97,13 @@
 
 
     <!-- PROCESSING-->
-    <div v-if="status === 'processing'">
+    <div v-show="status === 'processing'">
       <h2>Processing payment...</h2>
       <img src="@/assets/images/spinner.gif" width="50" height="50" />
     </div>
 
     <!-- SUCCESS-->
-    <div v-if="status === 'success'">
+    <div v-show="status === 'success'">
       <div>Your payment was completed successfully.</div>
       <h2>Thank you for your purchase!</h2>
       <div>
@@ -144,14 +144,17 @@ export default {
       card: {
         cardholder: "",
         cardnumber: "",
+        exp_month: "",
+        exp_year: "",
         cvc: null,
-      },
-      cardexpiry: "",
+      }
+      
     };
   },
 
   //CUIDADO A PARTIR DE AQUÍ ****************
   computed: {
+    
     artmartStore: mapStores(useArtmartStore).artmartStore,
     destinations() {
       return this.artmartStore.destinations;
@@ -211,16 +214,19 @@ export default {
   },
   methods: {
     async pay() {
+      
       this.status = 'processing';
       try {
-
+        this.processCardExpiry();
         const artmartResponse = await ArtmartService.checkout({
           email: this.customer.email,
           shipping_address: this.customer.shipping_address,
         });
-
-        if (artmartResponse.status === 'success') {
-          const { paymentIntentId, clientSecret } = artmartResponse.data;
+        
+        if (artmartResponse) {
+          
+          const { payment_intent_id: paymentIntentId, client_secret: clientSecret } = artmartResponse;
+          console.log("Variables: ", paymentIntentId, clientSecret);
           const blingResponse = await BlingService.confirmPaymentIntent(paymentIntentId, clientSecret, this.card);
 
           if (blingResponse) {
@@ -238,7 +244,20 @@ export default {
         this.status = 'error';
         console.error('Payment error:', error);
       }
+    },
+
+    processCardExpiry() {
+    if (this.cardexpiry) {
+      const [month, year] = this.cardexpiry.split('/');
+      if (month && year) {
+        this.card.exp_month = parseInt(month);
+        this.card.exp_year = parseInt(year);
+      } else {
+        this.card.exp_month = "";
+        this.card.exp_year = "";
+      }
     }
+  }
   },
   watch: {
     'customer.shipping_address.country': function (newVal) {

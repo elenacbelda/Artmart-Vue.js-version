@@ -1,20 +1,18 @@
 <template>
-  <main v-if="status == 'ready'">
-    <!-- ERROR
-    <div class="error-message">An error occurred during payment. Please try again.</div>
-    -->
+  <main>
 
-    <form class="checkout-form" id="checkout-form" v-on:submit.prevent="pay()">
+    <!-- ERROR -->
+    <div v-if="status === 'error'">
+      <div class="error-message">An error occurred during payment. Please try again.</div>
+    </div>
+
+    <form v-if="status === 'ready' || status === 'error'" class="checkout-form" id="checkout-form"
+      v-on:submit.prevent="pay">
       <fieldset>
         <legend>Contact information</legend>
         <div class="grid">
           <label for="email">Email</label>
-          <input
-            type="email"
-            name="email"
-            id="email"
-            required
-          />
+          <input type="email" name="email" id="email" v-model="customer.email" required />
         </div>
       </fieldset>
 
@@ -22,54 +20,30 @@
         <legend>Shipping address</legend>
         <div class="grid">
           <label for="name">Name</label>
-          <input
-            type="text"
-            name="name"
-            id="name"
-            required
-          />
+          <input type="text" name="name" id="name" v-model="customer.shipping_address.name" required />
 
           <label for="address">Address</label>
-          <input
-            type="text"
-            name="address"
-            id="address"
-            required
-          />
+          <input type="text" name="address" id="address" v-model="customer.shipping_address.address" required />
 
           <label for="city">City</label>
-          <input
-            type="text"
-            name="city"
-            id="city"
-            required
-          />
+          <input type="text" name="city" id="city" v-model="customer.shipping_address.city" required />
 
           <label for="country">Country</label>
-          <select
-            name="country"
-            id="country"
-          >
-            <!-- TODO: render bind destination options here -->
+          <select name="country" id="country" v-model="customer.shipping_address.country">
+
+            <option v-for="destination in destinations" :key="destination[1].isoCode" :value="destination[1].isoCode">
+              {{ destination[1].displayName }}
+            </option>
+
           </select>
 
           <label for="postalcode">Postal code</label>
-          <input
-            type="text"
-            name="postalcode"
-            id="postalcode"
-            v-model="customer.shipping_address.postal_code"
-            required
-          />
+          <input type="text" name="postalcode" id="postalcode" v-model="customer.shipping_address.postal_code"
+            required />
 
           <label for="phone">Phone (optional)</label>
-          <input
-            type="tel"
-            name="phone"
-            id="phone"
-            v-model="customer.shipping_address.phone"
-            placeholder="+43 123456789"
-          />
+          <input type="tel" name="phone" id="phone" v-model="customer.shipping_address.phone"
+            placeholder="+43 123456789" />
         </div>
       </fieldset>
 
@@ -77,92 +51,78 @@
         <legend>Card details</legend>
         <div class="grid">
           <label for="cardholder">Name on card</label>
-          <input
-            type="text"
-            name="cardholder"
-            id="cardholder"
-            v-model="card.cardholder"
-            required
-          />
+          <input type="text" name="cardholder" id="cardholder" v-model="card.cardholder" required />
 
           <label for="cardnumber">Card number</label>
-          <input
-            type="text"
-            name="cardnumber"
-            id="cardnumber"
-            v-model="card.cardnumber"
-            required
-          />
+          <input type="text" name="cardnumber" id="cardnumber" v-model="card.cardnumber" required />
 
           <label for="cardexpiry">Expiration</label>
-          <input
-            type="text"
-            name="cardexpiry"
-            id="cardexpiry"
-            v-model="cardexpiry"
-            pattern="\d{2}/\d{4}"
-            placeholder="MM/YYYY"
-            required
-          />
+          <input type="text" name="cardexpiry" id="cardexpiry" v-model="cardexpiry" pattern="\d{2}/\d{4}"
+            placeholder="MM/YYYY" required />
 
           <label for="cardcvc">CVC</label>
-          <input
-            name="cardcvc"
-            id="cardcvc"
-            v-model.number="card.cvc"
-            type="text"
-            pattern="\d{3}"
-            required
-          />
+          <input name="cardcvc" id="cardcvc" v-model.number="card.cvc" type="text" pattern="\d{3}" required />
         </div>
       </fieldset>
 
       <div>
         <div>
           Subtotal: €
-          <span id="price-subtotal">0</span>
+          <span id="price-subtotal">{{ subtotal }}</span>
         </div>
         <div>
           Shipping Costs:
-          <span id="price-shipping" :style="{ fontWeight: (false ? 'normal' : 'bold')}"> 
-            <!--TODO: adjust font-weight as described in the Readme--> 
+          <span id="price-shipping" :style="{ fontWeight: (!isShippingFree ? 'normal' : 'bold') }">
+            {{ shippingCostText }}
           </span>
         </div>
-        <div id="free-shipping-from">(Free shipping from: €
+        <div v-show="possibleFreeShipping && !isShippingFree" id="free-shipping-from">(Free shipping from: €
           <!--TODO: only display 'free-shipping-from' if free shipping is possible and the threshold is not yet reached-->
-          <span id="free-shipping-threshold">0</span>)
+          <span id="free-shipping-threshold">{{ freeShippingThreshold }}</span>)
         </div>
       </div>
 
       <div>
         <div class="checkout-total">
           Total: €
-          <span id="price-total">0</span>
+          <span id="price-total">{{ total }}</span>
         </div>
       </div>
 
       <div class="button-row">
         <router-link to="/cart">&larr; Back to Cart</router-link>
-        <button type="submit" id="pay-button">Pay</button>
+        <button type="submit" id="pay-button" v-on:click="pay">Pay</button>
       </div>
     </form>
-  </main>
 
-  <!-- PROCESSING
-    <h2>Processing payment...</h2>
-    <img src="@/assets/images/spinner.gif" width="50" height="50" />
-  -->
 
-  <!-- SUCCESS
-    <div>Your payment was completed successfully.</div>
-    <h2>Thank you for your purchase!</h2>
-    <div>
-      <router-link to="/search">&larr; Back to Search</router-link>
+    <!-- PROCESSING-->
+    <div v-if="status === 'processing'">
+      <h2>Processing payment...</h2>
+      <img src="@/assets/images/spinner.gif" width="50" height="50" />
     </div>
-  -->
+
+    <!-- SUCCESS-->
+    <div v-if="status === 'success'">
+      <div>Your payment was completed successfully.</div>
+      <h2>Thank you for your purchase!</h2>
+      <div>
+        <router-link to="/search">&larr; Back to Search</router-link>
+      </div>
+    </div>
+
+
+  </main>
 </template>
 
 <script>
+import { mapStores } from 'pinia';
+import { useArtmartStore } from '@/store';
+import * as ArtmartService from '@/services/ArtmartService';
+import * as BlingService from '@/services/BlingService';
+
+
+
 
 export default {
   name: "CheckoutPage",
@@ -189,7 +149,110 @@ export default {
       cardexpiry: "",
     };
   },
+
+  //CUIDADO A PARTIR DE AQUÍ ****************
+  computed: {
+    artmartStore: mapStores(useArtmartStore).artmartStore,
+    destinations() {
+      return this.artmartStore.destinations;
+    },
+    cartIsEmpty() {
+      return this.artmartStore.cartIsEmpty;
+    },
+    subtotal() {
+      return (this.artmartStore.cartTotal / 100).toFixed(2);
+    },
+    //Calculate if there's free shipping
+    isShippingFree() {
+      const country = this.customer.shipping_address.country;
+      const destination = this.destinations.get(country);
+      return destination && destination.freeShippingPossible && this.artmartStore.cartTotal >= destination.freeShippingThreshold;
+
+    },
+    shippingCost() {
+
+      if (this.isShippingFree) {
+        return 0;
+      }
+
+      const country = this.customer.shipping_address.country;
+      const destination = this.destinations.get(country);
+
+      return destination ? destination.price / 100 : 0;
+    },
+    shippingCostText() {
+      const cost = this.shippingCost;
+      return cost == 0 ? 'Free' : `€ ${(cost).toFixed(2)}`;
+
+    },
+
+    possibleFreeShipping() {
+      const country = this.customer.shipping_address.country;
+      return this.destinations.get(country)?.freeShippingPossible;
+    },
+
+    freeShippingThreshold() {
+      const country = this.customer.shipping_address.country;
+      const destination = this.destinations.get(country);
+      if (!destination || !destination.freeShippingThreshold) {
+        console.error(`No destination found for country: ${country}`);
+        return 0;
+      }      
+      return destination.freeShippingThreshold / 100;
+    },
+    total() {
+      return (parseFloat(this.subtotal) + parseFloat(this.shippingCost)).toFixed(2);
+    }
+  },
+  mounted() {
+    if (this.cartIsEmpty) {
+      this.$router.replace('/cart');
+    }
+  },
+  methods: {
+    async pay() {
+      this.status = 'processing';
+      try {
+
+        const artmartResponse = await ArtmartService.checkout({
+          email: this.customer.email,
+          shipping_address: this.customer.shipping_address,
+        });
+
+        if (artmartResponse.status === 'success') {
+          const { paymentIntentId, clientSecret } = artmartResponse.data;
+          const blingResponse = await BlingService.confirmPaymentIntent(paymentIntentId, clientSecret, this.card);
+
+          if (blingResponse) {
+            this.status = 'success';
+            this.$router.replace('/confirm');
+          } else {
+            this.status = 'error';
+            console.error('Payment failed at Bling');
+          }
+        } else {
+          this.status = 'error';
+          console.error('Payment failed at Artmart');
+        }
+      } catch (error) {
+        this.status = 'error';
+        console.error('Payment error:', error);
+      }
+    }
+  },
+  watch: {
+    'customer.shipping_address.country': function (newVal) {
+      console.log('Country changed:', newVal);
+      this.$nextTick(() => {
+        console.log('Subtotal:', this.subtotal);
+        console.log('Shipping Cost:', this.shippingCostText);
+        console.log('Total:', this.total);
+      });
+    }
+  }
 };
+
+
 </script>
 
 <style scoped>
@@ -197,7 +260,7 @@ export default {
   color: red;
 }
 
-.checkout-form > div {
+.checkout-form>div {
   margin: 1rem 0;
   text-align: right;
 }
@@ -252,16 +315,20 @@ export default {
   .checkout-form {
     width: 100%;
   }
+
   .checkout-form label {
     margin-bottom: -0.25em;
     margin-top: 0.25em;
   }
+
   .checkout-form input {
     margin: 0;
   }
+
   .checkout-form select {
     width: 100%;
   }
+
   .checkout-form div.grid {
     grid-template-columns: 1fr;
   }

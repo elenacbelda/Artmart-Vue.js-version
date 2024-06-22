@@ -50,17 +50,6 @@ export default {
   },
   computed: {
     greeting() {
-      /* let guests = this.allUsernames.slice(1);
-       const prettyList = (xs) => {
-         // Mueve "You" al inicio de la lista si está presente
-         const youIndex = xs.indexOf(this.myUsername);
-         if (youIndex > -1) {
-           xs.splice(youIndex, 1);
-           xs.unshift(this.myUsername);
-         }
-         return xs.join(', ').replace(/,([^,]*)$/, ' and$1');
-       };*/
-
       const prettyList = (xs) => xs.join(', ').replace(/,([^,]*)$/, ' and$1');
 
       const host = this.allUsernames[0];
@@ -68,15 +57,12 @@ export default {
       let s = `Hello ${this.myUsername}. `
 
       if (!this.isHost) {
-        // Asegura que this.myUsername esté primero en la lista si no es el host
         const myIndex = guests.indexOf(this.myUsername);
         if (myIndex > -1) {
-          guests.splice(myIndex, 1); // Elimina el myUsername de su posición original
-          guests.unshift(this.myUsername); // Añade el myUsername al inicio de la lista
+          guests.splice(myIndex, 1); 
+          guests.unshift(this.myUsername); 
         }
       }
-
-      // TODO: complete greeting
       if (this.isHost) {
         if (guests.length === 0) {
           s += "You are framing this artwork alone. Why not invite some friends to help you?";
@@ -95,7 +81,6 @@ export default {
       deep: true,
       handler() {
         if (!this.isUpdatingState) {
-          // TODO: update shared session state on server
           this.sendStateUpdate();
         }
       },
@@ -144,25 +129,20 @@ export default {
       try {
         this.socket = await ArtmartService.openSocket('/framing/shared/create');
 
-        //se crea un init message
         const initMessage = {
           op: "init",
           data: {
             artworkId: this.artworkId,
             state: this.config
           }
-
         };
 
         this.socket.send(JSON.stringify(initMessage));
 
         this.socket.onmessage = (event) => this.onMessage(JSON.parse(event.data));
-
-
         this.socket.onclose = () => console.log('WebSocket connection closed');
-
-
         this.socket.onerror = (error) => console.error('WebSocket error:', error);
+      
       } catch (error) {
         this.error = 'Failed to create session';
         console.error(error);
@@ -173,9 +153,6 @@ export default {
 
     async joinSession() {
       this.updateIsHost(false);
-      //this.$emit("update:sessionId", this.sessionId);
-
-      // TODO: join shared session as guest
       try {
         this.socket = await ArtmartService.openSocket(`/framing/shared/join/${this.sessionId}`);
         this.socket.onopen = () => {
@@ -185,7 +162,6 @@ export default {
               guestUsername: this.myUsername
             }
           };
-          //se envía a través del socket
           this.socket.send(JSON.stringify(joinMessage));
 
 
@@ -202,10 +178,8 @@ export default {
     },
 
     handleGuestClose(event) {
-      // Remove the user from the list
       let newUserList = this.allUsernames.filter(username => username !== this.myUsername);
 
-      // Notify the server about the user leaving if the user was not the host
       if (!this.isHost && this.socket.readyState === WebSocket.OPEN) {
         this.socket.send(JSON.stringify({ op: "update_usernames", data: newUserList }));
       }
@@ -216,7 +190,6 @@ export default {
       this.socket = null;
       this.myUsername = null;
       this.allUsernames = [];
-      //this.$emit("update:sessionId", null);
     },
 
     sendStateUpdate() {
@@ -229,7 +202,6 @@ export default {
       }
     },
     onMessage(msg) {
-      // TODO: complete these stubs
       switch (msg.op) {
         case "ready":
           this.$emit("update:sessionId", msg.data.sessionId);

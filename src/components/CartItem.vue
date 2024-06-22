@@ -5,18 +5,13 @@
       <framed-artwork :artwork="artwork" :config="cartItem" />
     </div>
 
-    <!-- TODO: complete this and slot it into a museum label
-      <div class="cart-frame-description"></div>
-      <div class="cart-price">€ 0</div>
-      <button class="cart-remove"></button>
-    -->
-
-    <MuseumLabel :artwork="artwork"></MuseumLabel>
+    <MuseumLabel :artwork="artwork">
     <slot>
       <div class="cart-frame-description">{{ description }}</div>
       <div class="cart-price">€ {{ priceText }}</div>
       <button class="cart-remove" @click="removeItem"></button>
     </slot>
+  </MuseumLabel>
   </div>
 </template>
 

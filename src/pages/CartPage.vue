@@ -1,7 +1,6 @@
 <template>
   <main>
     <section class="cart">
-      <!-- TODO: render and bind cart items here -->
       <div v-if="cartItems.length === 0">
         <p>There are no items in your shopping cart.</p>
       </div>
@@ -13,8 +12,7 @@
           class="cart-item"
         />
       <div class="cart-total">
-        <div class="price">Total: € {{ finalPrice }}</div>
-        <!-- TODO: insert checkout button here -->
+        <div class="price">Total: {{ finalPrice }}</div>
         <router-link to="/checkout" class="cart-checkout">Checkout</router-link>
         </div>
       </div>
@@ -24,7 +22,7 @@
 
 <script>
 
-import { computed } from 'vue';
+import { computed , watchEffect} from 'vue';
 import { useArtmartStore } from '@/store';
 import CartItem from '@/components/CartItem.vue';
 
@@ -40,13 +38,20 @@ export default {
     const cartItems = computed(() => artmartStore.cart);
     const totalPrice = computed(() => artmartStore.cart.reduce((total, item) => total + item.price, 0));
   
-    const finalPrice = totalPrice.value/100;
+    const finalPrice = computed(() =>
+      new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'EUR',
+      }).format(totalPrice.value / 100).replace('€', '€ ')
+    );
 
     return {
       cartItems,
       finalPrice
     };
   },
+  
+  
 };
 </script>
 

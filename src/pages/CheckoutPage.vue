@@ -77,7 +77,6 @@
           </span>
         </div>
         <div v-show="possibleFreeShipping && !isShippingFree" id="free-shipping-from">(Free shipping from: €
-          <!--TODO: only display 'free-shipping-from' if free shipping is possible and the threshold is not yet reached-->
           <span id="free-shipping-threshold">{{ freeShippingThreshold }}</span>)
         </div>
       </div>
@@ -151,7 +150,7 @@ export default {
     };
   },
 
-  //CUIDADO A PARTIR DE AQUÍ ****************
+  
   computed: {
     
     artmartStore: mapStores(useArtmartStore).artmartStore,

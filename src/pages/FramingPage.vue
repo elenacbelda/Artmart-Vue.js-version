@@ -1,40 +1,40 @@
 <template>
   <main class="framing-main">
     <div class="framing-preview" v-if="artwork">
-      <framed-artwork 
-        :artwork="artwork" 
-        :config="config" 
-        @print-sizes="printSizes = $event" 
-      />
+      <framed-artwork :artwork="artwork" :config="config" @print-sizes="printSizes = $event" />
       <museum-label :artwork="artwork" />
     </div>
 
     <form class="framing-form museum-label" @submit.prevent>
-      <configure-together 
-        :artworkId="artworkId" 
-        v-model:sessionId="configureTogether.sessionId"
-        v-model:config="config"
+      <configure-together :artworkId="artworkId" v-model:sessionId="configureTogether.sessionId" v-model:config="config"
         :didBuy="didBuy"
         @isHost="configureTogether.isHost = $event"
-      />
+         />
 
       <print-size-picker v-model="config.printSize" :printSizes="printSizes" />
 
-      <!-- TODO: add missing components -->
+
+      <width-slider label="Frame" v-model="config.frameWidth" :min="frameWidthMin" :max="frameWidthMax" />
+
+      <frame-style-picker v-model="config.frameStyle" :options="frameStyles" />
+
+      <width-slider label="Mat" v-model="config.matWidth" :min="matWidthMin" :max="matWidthMax" />
+
+      <mat-color-picker label="Mat" v-model="config.matColor" :options="matColors" />
 
       <fieldset>
         <legend>Price</legend>
         <div class="framing-form-row">
           <label for="price">Price (excl. shipping)</label>
           <div>
-            <span class="price" id="price">€ 0</span>
+            <span class="price" id="price">€ {{ priceText }}</span>
           </div>
         </div>
         <div class="framing-form-row">
           <label for="total-size">Total Size (incl. frame and mat)</label>
           <div id="total-size">{{ totalSizeText }} cm</div>
-        </div>        
-        <button type="submit" class="buy">
+        </div>
+        <button type="submit" class="buy" v-on:click="addToCart">
           Add to Cart
         </button>
       </fieldset>
@@ -48,8 +48,17 @@ import FramedArtwork from "@/components/FramedArtwork.vue";
 import MuseumLabel from "@/components/MuseumLabel.vue";
 import PrintSizePicker from "@/components/framing/PrintSizePicker.vue";
 import ConfigureTogether from "@/components/framing/ConfigureTogether.vue";
+import WidthSlider from "@/components/framing/WidthSlider.vue";
+import FrameStylePicker from "@/components/framing/FrameStylePicker.vue";
+import MatColorPicker from "@/components/framing/MatColorPicker.vue";
+
 import { mapStores } from "pinia";
 import { useArtmartStore } from "@/store";
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
 
 export default {
   name: "FramingPage",
@@ -57,7 +66,10 @@ export default {
     FramedArtwork,
     MuseumLabel,
     PrintSizePicker,
-    ConfigureTogether
+    ConfigureTogether,
+    WidthSlider,
+    FrameStylePicker,
+    MatColorPicker
   },
   props: {
     artworkId: Number,
@@ -72,13 +84,17 @@ export default {
         frameWidth: 40,
         frameStyle: artmartStore.sortedFrames[0].style,
         matWidth: 55,
-        matColor: artmartStore.sortedMats[0].color,        
+        matColor: artmartStore.sortedMats[0].color,
       },
       didBuy: false,
       configureTogether: {
         sessionId: null,
         isHost: false
-      }
+      },
+      frameWidthMin: 20,
+      frameWidthMax: 50,
+      matWidthMin: 0,
+      matWidthMax: 100
     };
   },
   computed: {
@@ -103,8 +119,15 @@ export default {
     totalSizeText() {
       const [w, h] = this.totalSize;
       return (w / 10).toFixed(1) + " × " + (h / 10).toFixed(1);
+    },
+    frameStyles() {
+      return this.artmartStore.sortedFrames.map((x) => x.style);
+    },
+    matColors() {
+      return this.artmartStore.sortedMats.map((x) => x.color);
     }
   },
+
   async mounted() {
     // fetch artwork based on ID in URL; if it doesn't exist, redirect to search page
     this.artwork = await ArtmartService.getArtwork(this.artworkId);
@@ -112,21 +135,19 @@ export default {
       this.$router.replace({ path: "/search" });
     }
 
-    // set initial frame config values based on parameters in URL
-    const clamp = (x, min, max) => Math.trunc(Math.min(Math.max(x, min), max));
     const query = this.$route.query;
     if (["S", "M", "L"].includes(query.printSize)) {
       this.config.printSize = query.printSize;
     }
     if (isFinite(+query.frameWidth)) {
-      this.config.frameWidth = clamp(+query.frameWidth, 20, 50);
+      this.config.frameWidth = clamp(+query.frameWidth, this.frameWidthMin, this.frameWidthMax);
     }
     const frameStyles = this.artmartStore.sortedFrames.map((x) => x.style);
     if (frameStyles.includes(query.frameStyle)) {
       this.config.frameStyle = query.frameStyle;
     }
     if (isFinite(+query.matWidth)) {
-      this.config.matWidth = clamp(+query.matWidth, 0, 100);
+      this.config.matWidth = clamp(+query.matWidth, this.matWidthMin, this.matWidthMax);
     }
     const matColors = this.artmartStore.sortedMats.map((x) => x.color);
     if (matColors.includes(query.matColor)) {
@@ -134,6 +155,9 @@ export default {
     }
 
     // TODO: join shared session when "together" parameter is present
+    if (query.together) {
+      this.configureTogether.sessionId = query.together;
+    }
   },
   watch: {
     config: {
@@ -144,26 +168,47 @@ export default {
       },
     },
     // TODO: update page URL if a configure together session has started or ended
+    'configureTogether.sessionId': {
+      handler() {
+        // update page URL if a configure together session has started or ended
+        this.updateQueryParams();
+      },
+    },
   },
   methods: {
-    addToCart() {
+    async addToCart() {
       // add the framed artwork to the shopping cart
-      const product = { artworkId: this.artwork.artworkId, ...this.config };
-      this.artmartStore.addToCart(product).then((ok) => {
-        if (ok) {
-          this.didBuy = true;
-          this.$router.push({ path: "/cart" });
+
+      const product = {
+        artworkId: this.artwork.artworkId,
+        printSize: this.config.printSize,
+        frameWidth: this.config.frameWidth,
+        frameStyle: this.config.frameStyle,
+        matWidth: this.config.matWidth,
+        matColor: this.config.matColor
+      };
+      this.artmartStore.addToCart(product).then((success) => {
+        if (success) {
+          // Si añadir al carrito es exitoso, establecer didBuy a true (opcional) y redirigir a la página del carrito
+          this.didBuy = true; // Opcionalmente establecer una bandera o realizar cualquier otra acción al añadir con éxito
+          this.$router.push({ path: "/cart" }); // Redirigir a la página del carrito
+        } else {
+          // Manejar el caso donde añadir al carrito falló (opcional)
+          console.error("Failed to add item to cart.");
         }
+      }).catch((error) => {
+        // Manejar errores imprevistos
+        console.error("An error occurred while adding item to cart:", error);
       });
-    },    
-    updateQueryParams() {
-      if (this.configureTogether.sessionId) {
-        this.$router.replace({ query: { together: this.configureTogether.sessionId } });
-      } else {
-        this.$router.replace({ query: this.config });
-      }
+    },
+  updateQueryParams() {
+    if (this.configureTogether.sessionId) {
+      this.$router.replace({ query: { together: this.configureTogether.sessionId } });
+    } else {
+      this.$router.replace({ query: this.config });
     }
   }
+}
 };
 </script>
 
@@ -210,7 +255,8 @@ export default {
 }
 
 .framing-preview img {
-  border: 0px solid black; /* necessary for Chrome & Firefox */
+  border: 0px solid black;
+  /* necessary for Chrome & Firefox */
   box-shadow: 0px 30px 60px 0px rgba(0, 0, 0, 0.5);
 }
 

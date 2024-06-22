@@ -129,7 +129,6 @@ export default {
   data: function () {
     return {
       status: "ready",
-      error: false,
       customer: {
         email: "",
         shipping_address: {

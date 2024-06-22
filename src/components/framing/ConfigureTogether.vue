@@ -6,7 +6,10 @@
     {{ greeting }}
     <div>
       <button @click="copyURL">
-        <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"><path d="M720-80q-50 0-85-35t-35-85q0-7 1-14.5t3-13.5L322-392q-17 15-38 23.5t-44 8.5q-50 0-85-35t-35-85q0-50 35-85t85-35q23 0 44 8.5t38 23.5l282-164q-2-6-3-13.5t-1-14.5q0-50 35-85t85-35q50 0 85 35t35 85q0 50-35 85t-85 35q-23 0-44-8.5T638-672L356-508q2 6 3 13.5t1 14.5q0 7-1 14.5t-3 13.5l282 164q17-15 38-23.5t44-8.5q50 0 85 35t35 85q0 50-35 85t-85 35Zm0-640q17 0 28.5-11.5T760-760q0-17-11.5-28.5T720-800q-17 0-28.5 11.5T680-760q0 17 11.5 28.5T720-720ZM240-440q17 0 28.5-11.5T280-480q0-17-11.5-28.5T240-520q-17 0-28.5 11.5T200-480q0 17 11.5 28.5T240-440Zm480 280q17 0 28.5-11.5T760-200q0-17-11.5-28.5T720-240q-17 0-28.5 11.5T680-200q0 17 11.5 28.5T720-160Zm0-600ZM240-480Zm480 280Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
+          <path
+            d="M720-80q-50 0-85-35t-35-85q0-7 1-14.5t3-13.5L322-392q-17 15-38 23.5t-44 8.5q-50 0-85-35t-35-85q0-50 35-85t85-35q23 0 44 8.5t38 23.5l282-164q-2-6-3-13.5t-1-14.5q0-50 35-85t85-35q50 0 85 35t35 85q0 50-35 85t-85 35q-23 0-44-8.5T638-672L356-508q2 6 3 13.5t1 14.5q0 7-1 14.5t-3 13.5l282 164q17-15 38-23.5t44-8.5q50 0 85 35t35 85q0 50-35 85t-85 35Zm0-640q17 0 28.5-11.5T760-760q0-17-11.5-28.5T720-800q-17 0-28.5 11.5T680-760q0 17 11.5 28.5T720-720ZM240-440q17 0 28.5-11.5T280-480q0-17-11.5-28.5T240-520q-17 0-28.5 11.5T200-480q0 17 11.5 28.5T240-440Zm480 280q17 0 28.5-11.5T760-200q0-17-11.5-28.5T720-240q-17 0-28.5 11.5T680-200q0 17 11.5 28.5T720-160Zm0-600ZM240-480Zm480 280Z" />
+        </svg>
         <span>Copy Invite Link</span>
       </button>
       <button v-if="isHost" @click="endSession" id="stopConfigureTogether">
@@ -15,7 +18,10 @@
     </div>
   </fieldset>
   <button v-else class="configure-together-btn" @click="createSession">
-    <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"><path d="M40-160v-160q0-34 23.5-57t56.5-23h131q20 0 38 10t29 27q29 39 71.5 61t90.5 22q49 0 91.5-22t70.5-61q13-17 30.5-27t36.5-10h131q34 0 57 23t23 57v160H640v-91q-35 25-75.5 38T480-200q-43 0-84-13.5T320-252v92H40Zm440-160q-38 0-72-17.5T351-386q-17-25-42.5-39.5T253-440q22-37 93-58.5T480-520q63 0 134 21.5t93 58.5q-29 0-55 14.5T609-386q-22 32-56 49t-73 17ZM160-440q-50 0-85-35t-35-85q0-51 35-85.5t85-34.5q51 0 85.5 34.5T280-560q0 50-34.5 85T160-440Zm640 0q-50 0-85-35t-35-85q0-51 35-85.5t85-34.5q51 0 85.5 34.5T920-560q0 50-34.5 85T800-440ZM480-560q-50 0-85-35t-35-85q0-51 35-85.5t85-34.5q51 0 85.5 34.5T600-680q0 50-34.5 85T480-560Z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
+      <path
+        d="M40-160v-160q0-34 23.5-57t56.5-23h131q20 0 38 10t29 27q29 39 71.5 61t90.5 22q49 0 91.5-22t70.5-61q13-17 30.5-27t36.5-10h131q34 0 57 23t23 57v160H640v-91q-35 25-75.5 38T480-200q-43 0-84-13.5T320-252v92H40Zm440-160q-38 0-72-17.5T351-386q-17-25-42.5-39.5T253-440q22-37 93-58.5T480-520q63 0 134 21.5t93 58.5q-29 0-55 14.5T609-386q-22 32-56 49t-73 17ZM160-440q-50 0-85-35t-35-85q0-51 35-85.5t85-34.5q51 0 85.5 34.5T280-560q0 50-34.5 85T160-440Zm640 0q-50 0-85-35t-35-85q0-51 35-85.5t85-34.5q51 0 85.5 34.5T920-560q0 50-34.5 85T800-440ZM480-560q-50 0-85-35t-35-85q0-51 35-85.5t85-34.5q51 0 85.5 34.5T600-680q0 50-34.5 85T480-560Z" />
+    </svg>
     <span>Configure Together</span>
   </button>
 </template>
@@ -33,10 +39,10 @@ export default {
   },
   emits: ["isHost", "update:config", "update:sessionId"],
   data() {
-    return {      
+    return {
       isHost: false,
       error: null,
-      socket: null,      
+      socket: null,
       myUsername: null,
       allUsernames: [],
       isUpdatingState: false
@@ -47,8 +53,18 @@ export default {
       const prettyList = (xs) => xs.join(', ').replace(/,([^,]*)$/, ' and$1');
       const host = this.allUsernames[0];
       const guests = this.allUsernames.slice(1);
+      console.log("allUsernames", this.allUsernames);
       let s = `Hello ${this.myUsername}. `
       // TODO: complete greeting
+      if (this.isHost) {
+        if (guests.length === 0) {
+          s += "You are framing this artwork alone. Why not invite some friends to help you?";
+        } else {
+          s += `You are framing this artwork together with ${prettyList(guests)}.`;
+        }
+      } else {
+        s += `${prettyList(guests.map(u => u === this.myUsername ? "You" : u))} are helping ${host} frame this artwork.`;
+      }
       return s;
     }
   },
@@ -58,6 +74,7 @@ export default {
       handler() {
         if (!this.isUpdatingState) {
           // TODO: update shared session state on server
+          this.sendStateUpdate();
         }
       },
     },
@@ -75,7 +92,7 @@ export default {
         this.socket.onmessage = (rawMsg) => {
           const msg = JSON.parse(rawMsg.data);
           // console.log(msg)
-          this.onMessage(msg); 
+          this.onMessage(msg);
         }
         this.socket.onerror = (e) => {
           this.error = "socket error";
@@ -90,20 +107,73 @@ export default {
     }
   },
   methods: {
-    async joinSession() {
-      this.updateIsHost(false);      
-      this.socket = null;  // TODO: join shared session as guest
-    },
+    
     async createSession() {
       this.updateIsHost(true);
-      this.socket = await ArtmartService.openSocket("TO/DO");  
-      // TODO: create and initialize new shared session as host
+      try {
+        this.socket = await ArtmartService.openSocket('/framing/shared/create');
+
+        //se crea un init message
+        const initMessage = {
+          op: "init",
+          data: {
+            artworkId: this.artworkId,
+            state: this.config
+          }
+        };
+        //se envía a través del socket
+        this.socket.send(JSON.stringify(initMessage));
+
+
+
+        this.socket.onmessage = (event) => this.onMessage(JSON.parse(event.data));
+
+
+        //Tengo que modificar esto porque onclose del host hace un forced onclose en todos
+        this.socket.onclose = () => console.log('WebSocket connection closed');
+
+
+        this.socket.onerror = (error) => console.error('WebSocket error:', error);
+      } catch (error) {
+        this.error = 'Failed to create session';
+        console.error(error);
+      }
+    },
+    async joinSession() {
+      this.updateIsHost(false);
+      this.$emit("update:sessionId", this.sessionId);
+
+      // TODO: join shared session as guest
+      try {
+        this.socket = await ArtmartService.openSocket(`/framing/shared/join/${this.sessionId}`);
+        this.socket.onopen = () => {
+          console.log('Joined session as guest');
+        };
+        this.socket.onmessage = (event) => this.onMessage(JSON.parse(event.data));
+        this.socket.onclose = () => console.log('WebSocket connection closed');
+        this.socket.onerror = (error) => console.error('WebSocket error:', error);
+
+      } catch (error) {
+        this.error = 'Failed to join session';
+        console.error(error);
+      }
+    },
+
+    sendStateUpdate() {
+      if (this.socket) {
+        this.isUpdatingState = true;
+        this.socket.send(JSON.stringify({ op: "update_state", data: this.config }));
+        this.$nextTick(() => {
+          this.isUpdatingState = false;
+        });
+      }
     },
     onMessage(msg) {
       // TODO: complete these stubs
       switch (msg.op) {
-        case "ready":        
+        case "ready":
           this.$emit("update:sessionId", msg.data.sessionId);
+          this.myUsername = msg.data.username;
           break;
         case "update_state":
           this.isUpdatingState = true;
@@ -116,21 +186,65 @@ export default {
           this.error = msg.data.message;
           this.socket?.close()
           break;
+        case "done":
+          this.resetSession();
+          const hostMessage = msg.data.didBuy
+            ? `${msg.data.host} has added the framed artwork to their shopping cart.`
+            : `${msg.data.host} has decided not to buy this artwork.`;
+          this.error = hostMessage;
+          break;
       }
     },
     endSession() {
-      // TODO
-      this.socket?.close();
+      if (this.socket) {
+        if (this.isHost) {
+          const doneMessage = {
+            op: "done",
+            data: { didBuy: this.didBuy }
+          };
+          this.socket.send(JSON.stringify(doneMessage));
+        }
+        this.socket.close();
+        this.socket = null;
+        this.resetSession();
+      }
+    },
+    resetSession() {
+      this.socket = null;
+      this.myUsername = null;
+      this.allUsernames = [];
+      this.error = null;
+      this.$emit("update:sessionId", null);
     },
     copyURL() {
-      navigator.clipboard.writeText(window.location);
+      // Crear una nueva instancia de URL basada en la URL actual
+      const url = new URL(window.location.href);
+      console.log("URL actual", url);
+
+      // Actualizar el parámetro 'together' en la URL con this.sessionId
+      url.searchParams.set('together', this.sessionId);
+
+      // Convertir la URL actualizada de nuevo a cadena
+      const sharedURL = url.toString();
+
+      // Copiar la URL al portapapeles del usuario
+      navigator.clipboard.writeText(sharedURL)
+        .then(() => {
+          console.log('URL copiada correctamente al portapapeles');
+          // Aquí podrías añadir alguna lógica adicional si lo necesitas
+        })
+        .catch(err => {
+          console.error('Error al copiar URL al portapapeles:', err);
+          // Aquí podrías manejar el error si ocurre alguno
+        });
     },
+
     updateIsHost(isHost) {
       this.isHost = isHost;
       this.$emit('isHost', isHost);
     }
   },
-  beforeUnmount() {    
+  beforeUnmount() {
     this.endSession();
   }
 };
@@ -165,10 +279,10 @@ export default {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin-top: 1em;  
+  margin-top: 1em;
 }
 
-.configure-together-container > div {
+.configure-together-container>div {
   display: flex;
   justify-content: space-between;
 }

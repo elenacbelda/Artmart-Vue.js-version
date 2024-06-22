@@ -22,7 +22,7 @@
 
       <mat-color-picker label="Mat" v-model="config.matColor" :options="matColors" />
 
-      <fieldset>
+      <fieldset v-if="configureTogether.isHost">
         <legend>Price</legend>
         <div class="framing-form-row">
           <label for="price">Price (excl. shipping)</label>
@@ -34,7 +34,7 @@
           <label for="total-size">Total Size (incl. frame and mat)</label>
           <div id="total-size">{{ totalSizeText }} cm</div>
         </div>
-        <button type="submit" class="buy" v-on:click="addToCart">
+        <button type="submit" class="buy" v-on:click="addToCart" >
           Add to Cart
         </button>
       </fieldset>
@@ -89,7 +89,7 @@ export default {
       didBuy: false,
       configureTogether: {
         sessionId: null,
-        isHost: false
+        isHost: true
       },
       frameWidthMin: 20,
       frameWidthMax: 50,
@@ -129,7 +129,6 @@ export default {
   },
 
   async mounted() {
-    // fetch artwork based on ID in URL; if it doesn't exist, redirect to search page
     this.artwork = await ArtmartService.getArtwork(this.artworkId);
     if (this.artwork == null) {
       this.$router.replace({ path: "/search" });
@@ -154,7 +153,6 @@ export default {
       this.config.matColor = query.matColor;
     }
 
-    // TODO: join shared session when "together" parameter is present
     if (query.together) {
       this.configureTogether.sessionId = query.together;
     }
@@ -163,22 +161,17 @@ export default {
     config: {
       deep: true,
       handler() {
-        // update page URL to always reflect current frame config values
         this.updateQueryParams();
       },
     },
-    // TODO: update page URL if a configure together session has started or ended
     'configureTogether.sessionId': {
       handler() {
-        // update page URL if a configure together session has started or ended
         this.updateQueryParams();
       },
     },
   },
   methods: {
     async addToCart() {
-      // add the framed artwork to the shopping cart
-
       const product = {
         artworkId: this.artwork.artworkId,
         printSize: this.config.printSize,
@@ -189,15 +182,12 @@ export default {
       };
       this.artmartStore.addToCart(product).then((success) => {
         if (success) {
-          // Si añadir al carrito es exitoso, establecer didBuy a true (opcional) y redirigir a la página del carrito
-          this.didBuy = true; // Opcionalmente establecer una bandera o realizar cualquier otra acción al añadir con éxito
-          this.$router.push({ path: "/cart" }); // Redirigir a la página del carrito
+          this.didBuy = true; 
+          this.$router.push({ path: "/cart" }); 
         } else {
-          // Manejar el caso donde añadir al carrito falló (opcional)
           console.error("Failed to add item to cart.");
         }
       }).catch((error) => {
-        // Manejar errores imprevistos
         console.error("An error occurred while adding item to cart:", error);
       });
     },

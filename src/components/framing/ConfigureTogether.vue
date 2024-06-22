@@ -5,12 +5,12 @@
   <fieldset v-if="socket" class="configure-together-container">
     {{ greeting }}
     <div>
-      <button @click="copyURL">
+      <button v-show="isHost" @click="copyURL">
         <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
           <path
             d="M720-80q-50 0-85-35t-35-85q0-7 1-14.5t3-13.5L322-392q-17 15-38 23.5t-44 8.5q-50 0-85-35t-35-85q0-50 35-85t85-35q23 0 44 8.5t38 23.5l282-164q-2-6-3-13.5t-1-14.5q0-50 35-85t85-35q50 0 85 35t35 85q0 50-35 85t-85 35q-23 0-44-8.5T638-672L356-508q2 6 3 13.5t1 14.5q0 7-1 14.5t-3 13.5l282 164q17-15 38-23.5t44-8.5q50 0 85 35t35 85q0 50-35 85t-85 35Zm0-640q17 0 28.5-11.5T760-760q0-17-11.5-28.5T720-800q-17 0-28.5 11.5T680-760q0 17 11.5 28.5T720-720ZM240-440q17 0 28.5-11.5T280-480q0-17-11.5-28.5T240-520q-17 0-28.5 11.5T200-480q0 17 11.5 28.5T240-440Zm480 280q17 0 28.5-11.5T760-200q0-17-11.5-28.5T720-240q-17 0-28.5 11.5T680-200q0 17 11.5 28.5T720-160Zm0-600ZM240-480Zm480 280Z" />
         </svg>
-        <span>Copy Invite Link</span>
+        <span >Copy Invite Link</span>
       </button>
       <button v-if="isHost" @click="endSession" id="stopConfigureTogether">
         <span>Stop Sharing</span>
@@ -50,11 +50,32 @@ export default {
   },
   computed: {
     greeting() {
+      /* let guests = this.allUsernames.slice(1);
+       const prettyList = (xs) => {
+         // Mueve "You" al inicio de la lista si está presente
+         const youIndex = xs.indexOf(this.myUsername);
+         if (youIndex > -1) {
+           xs.splice(youIndex, 1);
+           xs.unshift(this.myUsername);
+         }
+         return xs.join(', ').replace(/,([^,]*)$/, ' and$1');
+       };*/
+
       const prettyList = (xs) => xs.join(', ').replace(/,([^,]*)$/, ' and$1');
+
       const host = this.allUsernames[0];
       const guests = this.allUsernames.slice(1);
-      console.log("allUsernames", this.allUsernames);
       let s = `Hello ${this.myUsername}. `
+
+      if (!this.isHost) {
+        // Asegura que this.myUsername esté primero en la lista si no es el host
+        const myIndex = guests.indexOf(this.myUsername);
+        if (myIndex > -1) {
+          guests.splice(myIndex, 1); // Elimina el myUsername de su posición original
+          guests.unshift(this.myUsername); // Añade el myUsername al inicio de la lista
+        }
+      }
+
       // TODO: complete greeting
       if (this.isHost) {
         if (guests.length === 0) {
@@ -63,6 +84,7 @@ export default {
           s += `You are framing this artwork together with ${prettyList(guests)}.`;
         }
       } else {
+
         s += `${prettyList(guests.map(u => u === this.myUsername ? "You" : u))} are helping ${host} frame this artwork.`;
       }
       return s;
@@ -91,7 +113,7 @@ export default {
         this.error = null;
         this.socket.onmessage = (rawMsg) => {
           const msg = JSON.parse(rawMsg.data);
-          // console.log(msg)
+
           this.onMessage(msg);
         }
         this.socket.onerror = (e) => {
@@ -107,7 +129,16 @@ export default {
     }
   },
   methods: {
-    
+    broadcastUsernames() {
+      if (this.socket) {
+        const usernamesMessage = {
+          op: "update_users",
+          data: this.allUsernames
+        };
+        this.socket.send(JSON.stringify(usernamesMessage));
+      }
+    },
+
     async createSession() {
       this.updateIsHost(true);
       try {
@@ -120,16 +151,14 @@ export default {
             artworkId: this.artworkId,
             state: this.config
           }
+
         };
-        //se envía a través del socket
+
         this.socket.send(JSON.stringify(initMessage));
-
-
 
         this.socket.onmessage = (event) => this.onMessage(JSON.parse(event.data));
 
 
-        //Tengo que modificar esto porque onclose del host hace un forced onclose en todos
         this.socket.onclose = () => console.log('WebSocket connection closed');
 
 
@@ -138,25 +167,56 @@ export default {
         this.error = 'Failed to create session';
         console.error(error);
       }
+
     },
+
+
     async joinSession() {
       this.updateIsHost(false);
-      this.$emit("update:sessionId", this.sessionId);
+      //this.$emit("update:sessionId", this.sessionId);
 
       // TODO: join shared session as guest
       try {
         this.socket = await ArtmartService.openSocket(`/framing/shared/join/${this.sessionId}`);
         this.socket.onopen = () => {
+          const joinMessage = {
+            op: "user_joined",
+            data: {
+              guestUsername: this.myUsername
+            }
+          };
+          //se envía a través del socket
+          this.socket.send(JSON.stringify(joinMessage));
+
+
           console.log('Joined session as guest');
         };
         this.socket.onmessage = (event) => this.onMessage(JSON.parse(event.data));
-        this.socket.onclose = () => console.log('WebSocket connection closed');
+        this.socket.onclose = (event) => this.handleGuestClose(event);
         this.socket.onerror = (error) => console.error('WebSocket error:', error);
 
       } catch (error) {
         this.error = 'Failed to join session';
         console.error(error);
       }
+    },
+
+    handleGuestClose(event) {
+      // Remove the user from the list
+      let newUserList = this.allUsernames.filter(username => username !== this.myUsername);
+
+      // Notify the server about the user leaving if the user was not the host
+      if (!this.isHost && this.socket.readyState === WebSocket.OPEN) {
+        this.socket.send(JSON.stringify({ op: "update_usernames", data: newUserList }));
+      }
+
+      console.log('User left the session');
+
+      // Clean up client-side state
+      this.socket = null;
+      this.myUsername = null;
+      this.allUsernames = [];
+      //this.$emit("update:sessionId", null);
     },
 
     sendStateUpdate() {
@@ -174,7 +234,10 @@ export default {
         case "ready":
           this.$emit("update:sessionId", msg.data.sessionId);
           this.myUsername = msg.data.username;
+          this.allUsernames.push(this.myUsername);
+
           break;
+
         case "update_state":
           this.isUpdatingState = true;
           this.$emit("update:config", msg.data);
@@ -182,16 +245,30 @@ export default {
             this.isUpdatingState = false;
           })
           break;
+
+        case "user_joined":
+          if (this.isHost) {
+            this.allUsernames.push(msg.data.username);
+            this.broadcastUsernames();
+          }
+          break;
+
+        case "update_users":
+          this.allUsernames = msg.data.usernames;
+          break;
+
         case "error":
           this.error = msg.data.message;
           this.socket?.close()
           break;
+
         case "done":
-          this.resetSession();
-          const hostMessage = msg.data.didBuy
-            ? `${msg.data.host} has added the framed artwork to their shopping cart.`
-            : `${msg.data.host} has decided not to buy this artwork.`;
-          this.error = hostMessage;
+          let hostUsername = this.allUsernames[0];  
+          const hostMessage = msg.data.success
+            ? `${hostUsername} has added the framed artwork to their shopping cart.`
+            : `${hostUsername} has decided not to buy this artwork.`;
+            this.resetSession();
+            this.error = hostMessage;
           break;
       }
     },
@@ -200,7 +277,7 @@ export default {
         if (this.isHost) {
           const doneMessage = {
             op: "done",
-            data: { didBuy: this.didBuy }
+            data: { success: this.didBuy }
           };
           this.socket.send(JSON.stringify(doneMessage));
         }
@@ -214,29 +291,13 @@ export default {
       this.myUsername = null;
       this.allUsernames = [];
       this.error = null;
-      this.$emit("update:sessionId", null);
     },
     copyURL() {
-      // Crear una nueva instancia de URL basada en la URL actual
       const url = new URL(window.location.href);
-      console.log("URL actual", url);
 
-      // Actualizar el parámetro 'together' en la URL con this.sessionId
       url.searchParams.set('together', this.sessionId);
-
-      // Convertir la URL actualizada de nuevo a cadena
       const sharedURL = url.toString();
-
-      // Copiar la URL al portapapeles del usuario
       navigator.clipboard.writeText(sharedURL)
-        .then(() => {
-          console.log('URL copiada correctamente al portapapeles');
-          // Aquí podrías añadir alguna lógica adicional si lo necesitas
-        })
-        .catch(err => {
-          console.error('Error al copiar URL al portapapeles:', err);
-          // Aquí podrías manejar el error si ocurre alguno
-        });
     },
 
     updateIsHost(isHost) {
